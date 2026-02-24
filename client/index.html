@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ AI 翻译助手</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 600px; margin: 50px auto; padding: 0 20px; background: #f5f5f5; }
+    .container { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    h1 { text-align: center; color: #333; margin-bottom: 30px; }
+    textarea { width: 500px; padding: 15px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; resize: vertical; margin-bottom: 15px; }
+    button { background: #10a37f; color: white; border: none; padding: 12px 30px; border-radius: 30px; font-size: 16px; cursor: pointer; width: 100%; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .result { margin-top: 30px; padding: 20px; background: #f0f9f4; border-radius: 10px; display: none; }
+    .result.show { display: block; }
+    .original { font-weight: bold; color: #10a37f; }
+    .translation { font-size: 24px; margin: 10px 0; color: #333; }
+    .example { font-style: italic; color: #666; border-left: 3px solid #10a37f; padding-left: 15px; margin-top: 15px; }
+    .loading { text-align: center; color: #999; margin-top: 20px; display: none; }
+    .error { color: #d32f2f; background: #ffebee; padding: 10px; border-radius: 8px; margin-top: 20px; display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌐 AI 翻译助手</h1>
+    <textarea id="inputText" rows="4" placeholder="输入要翻译的英文...">Hello, how are you?</textarea>
+    <button id="translateBtn">✨ 翻译</button>
+    
+    <div class="loading" id="loading">AI 正在思考中...</div>
+    <div class="error" id="error"></div>
+    
+    <div class="result" id="result">
+      <div class="original" id="original"></div>
+      <div class="translation" id="translation"></div>
+      <div class="example" id="example"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('translateBtn');
+    const input = document.getElementById('inputText');
+    const loading = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const resultDiv = document.getElementById('result');
+    const originalSpan = document.getElementById('original');
+    const translationSpan = document.getElementById('translation');
+    const exampleSpan = document.getElementById('example');
+
+    btn.addEventListener('click', async () => {
+      const text = input.value.trim();
+      if (!text) return;
+
+      // 重置界面
+      btn.disabled = true;
+      loading.style.display = 'block';
+      errorDiv.style.display = 'none';
+      resultDiv.classList.remove('show');
+
+      try {
+        const response = await fetch('http://localhost:3001/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text, targetLang: '中文' })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          originalSpan.textContent = `原文：${data.original}`;
+          translationSpan.textContent = data.translation;
+          exampleSpan.textContent = `📖 例句：${data.example}`;
+          resultDiv.classList.add('show');
+        } else {
+          errorDiv.textContent = data.error || '翻译失败';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = '网络错误，请检查服务器是否运行';
+        errorDiv.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>
