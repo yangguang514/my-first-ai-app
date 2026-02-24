@@ -26,7 +26,7 @@
     <textarea id="inputText" rows="4" placeholder="输入要翻译的英文...">Hello, how are you?</textarea>
     <button id="translateBtn">✨ 翻译</button>
     
-    <div class="loading" id="loading">AI 正在思考中...</div>
+    <div class="loading" id="loading">风风你好，AI 正在思考中...</div>
     <div class="error" id="error"></div>
     
     <div class="result" id="result">
@@ -43,6 +43,7 @@
     const errorDiv = document.getElementById('error');
     const resultDiv = document.getElementById('result');
     const originalSpan = document.getElementById('original');
+    const originalLangSpan = document.getElementById('originalLang');
     const translationSpan = document.getElementById('translation');
     const exampleSpan = document.getElementById('example');
 
@@ -68,6 +69,7 @@
         if (response.ok) {
           originalSpan.textContent = `原文：${data.original}`;
           translationSpan.textContent = data.translation;
+          originalLangSpan.textContent = `原文语言：${data.originalLang}`;
           exampleSpan.textContent = `📖 例句：${data.example}`;
           resultDiv.classList.add('show');
         } else {
