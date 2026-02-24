@@ -32,6 +32,7 @@
     <div class="result" id="result">
       <div class="original" id="original"></div>
       <div class="translation" id="translation"></div>
+      <div class="originalLang" id="originalLang"></div>
       <div class="example" id="example"></div>
     </div>
   </div>
@@ -65,7 +66,7 @@
         });
 
         const data = await response.json();
-        
+        console.log(data,response)
         if (response.ok) {
           originalSpan.textContent = `原文：${data.original}`;
           translationSpan.textContent = data.translation;
@@ -77,6 +78,7 @@
           errorDiv.style.display = 'block';
         }
       } catch (err) {
+        console.log(err)
         errorDiv.textContent = '网络错误，请检查服务器是否运行';
         errorDiv.style.display = 'block';
       } finally {
