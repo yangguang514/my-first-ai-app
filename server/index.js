@@ -26,6 +26,7 @@ app.post('/api/translate', async (req, res) => {
   try {
     const prompt = `请先识别出当前原文的语言，然后将他翻译成${targetLang}，并尽量符合中文语法和语境。并提供一个例句。以JSON格式返回，包含三个字段：
                     - original: 原文
+                    - originalLang: 原文的语言
                     - translation: 译文
                     - example: 一个包含该词的例句（用${targetLang}）
                     
