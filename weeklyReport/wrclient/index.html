@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 AI 周报生成器</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e9ecf2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .header h1 {
+      font-size: 2.5rem;
+      color: #1a2639;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    
+    .header p {
+      color: #4a5568;
+      font-size: 1.1rem;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      margin-bottom: 30px;
+    }
+    
+    .examples-section {
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 25px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .examples-section h3 {
+      color: #2d3748;
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .example-badge {
+      background: #10a37f;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    
+    .example-box {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .example-box:last-child {
+      margin-bottom: 0;
+    }
+    
+    .example-raw {
+      color: #4a5568;
+      font-size: 0.95rem;
+      padding: 10px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-style: italic;
+    }
+    
+    .example-output {
+      background: #f0f9f4;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.9rem;
+      color: #2d3748;
+      border-left: 4px solid #10a37f;
+    }
+    
+    textarea {
+      width: 100%;
+      padding: 20px;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      font-size: 1rem;
+      line-height: 1.6;
+      resize: vertical;
+      margin-bottom: 20px;
+      transition: border 0.2s;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #10a37f;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .btn-primary {
+      background: #10a37f;
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 2;
+      transition: background 0.2s;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: #0e8c6d;
+    }
+    
+    .btn-secondary {
+      background: white;
+      color: #4a5568;
+      border: 2px solid #e2e8f0;
+      padding: 14px 30px;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      transition: all 0.2s;
+    }
+    
+    .btn-secondary:hover {
+      background: #f8fafc;
+      border-color: #cbd5e0;
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 30px;
+      display: none;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 3px solid #e2e8f0;
+      border-top-color: #10a37f;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .result-card {
+      background: white;
+      border-radius: 24px;
+      padding: 30px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+      display: none;
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .result-header h2 {
+      color: #1a2639;
+    }
+    
+    .copy-btn {
+      background: none;
+      border: 1px solid #e2e8f0;
+      padding: 8px 16px;
+      border-radius: 30px;
+      cursor: pointer;
+      color: #4a5568;
+      transition: all 0.2s;
+    }
+    
+    .copy-btn:hover {
+      background: #f8fafc;
+      border-color: #10a37f;
+      color: #10a37f;
+    }
+    
+    .report-content {
+      background: #f8fafc;
+      padding: 25px;
+      border-radius: 16px;
+      white-space: pre-wrap;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #2d3748;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .error {
+      background: #fff5f5;
+      color: #c53030;
+      padding: 15px;
+      border-radius: 12px;
+      margin: 20px 0;
+      border-left: 4px solid #fc8181;
+      display: none;
+    }
+    
+    .tips {
+      background: #ebf8ff;
+      border-left: 4px solid #4299e1;
+      padding: 15px;
+      border-radius: 12px;
+      margin-top: 20px;
+      color: #2c5282;
+    }
+    
+    .tips ul {
+      margin-top: 8px;
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>
+        <span>📊</span>
+        AI 周报生成器
+      </h1>
+      <p>输入你的工作记录，AI 帮你整理成专业周报</p>
+    </div>
+    
+    <div class="card">
+      <div class="examples-section">
+        <h3>
+          <span>📚</span>
+          学习示例（Few-Shot Learning）
+          <span class="example-badge">AI 就是这样学会的</span>
+        </h3>
+        
+        <div class="example-box">
+          <div style="font-weight: 600; color: #10a37f; margin-bottom: 8px;">📝 示例 1：原始记录</div>
+          <div class="example-raw">周一：参加产品需求评审会，讨论新功能优先级<br>周二：修复用户反馈的登录bug，花了半天时间<br>周三：开发支付页面，完成了前端布局</div>
+          <div style="font-weight: 600; color: #10a37f; margin: 10px 0 8px;">✨ AI 生成的周报</div>
+          <div class="example-output">
+            # 本周工作周报<br><br>## 📋 本周完成<br>1. 需求评审：参加产品需求评审会，明确新功能开发优先级<br>2. Bug修复：修复用户登录异常问题<br>3. 支付功能开发：完成支付页面前端布局<br><br>## ⚠️ 存在问题<br>- 登录bug暴露了现有session管理机制不健壮<br><br>## 📅 下周计划<br>1. 继续支付功能开发<br>2. 优化session管理机制
+          </div>
+        </div>
+        
+        <div class="example-box">
+          <div style="font-weight: 600; color: #10a37f; margin-bottom: 8px;">📝 示例 2：原始记录</div>
+          <div class="example-raw">周二上午修复了数据库连接池的bug，下午写了接口文档。周三和测试同学过了一遍测试用例，发现几个边界问题。周四改bug，周五上线。</div>
+          <div style="font-weight: 600; color: #10a37f; margin: 10px 0 8px;">✨ AI 生成的周报</div>
+          <div class="example-output">
+            # 本周工作周报<br><br>## 📋 本周完成<br>1. 数据库优化：修复连接池配置问题<br>2. 文档建设：完成核心接口的技术文档<br>3. 质量保障：与测试团队评审测试用例，发现并修复5个边界问题<br>4. 版本发布：周五顺利上线<br><br>## ⚠️ 存在问题<br>- 上线前发现环境配置差异，需要规范化部署流程<br><br>## 📅 下周计划<br>1. 监控上线后系统运行状态<br>2. 开始下一版本的需求预研
+          </div>
+        </div>
+      </div>
+      
+      <label for="notes" style="font-weight: 600; color: #2d3748; margin-bottom: 8px; display: block;">
+        📝 粘贴你的工作记录
+      </label>
+      <textarea 
+        id="notes" 
+        rows="8" 
+        placeholder="例如：&#10;周一：参加了产品评审会，讨论了新功能的优先级&#10;周二：修复了用户反馈的登录bug&#10;周三：开发支付页面，完成了前端布局&#10;周四：和设计师沟通UI调整方案&#10;周五：写周报，参加团队周会"
+      >周一：参加了产品需求评审会，讨论了新功能优先级
+周二：修复了用户反馈的登录bug
+周三：开发支付页面，完成了前端布局
+周四：和设计师沟通UI调整方案
+周五：写周报，参加团队周会</textarea>
+      
+      <div class="button-group">
+        <button class="btn-primary" id="generateBtn">✨ 生成周报</button>
+        <button class="btn-secondary" id="clearBtn">清空</button>
+      </div>
+      
+      <div class="tips">
+        <strong>💡 小贴士：</strong> 记录越详细，周报越精准。建议包含：
+        <ul>
+          <li>具体的工作内容（做了什么）</li>
+          <li>遇到的问题（什么bug/难点）</li>
+          <li>花费的时间（半天/全天）</li>
+          <li>协作对象（和谁沟通）</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div style="color: #718096;">AI 正在思考如何整理你的周报...</div>
+    </div>
+    
+    <div class="error" id="error"></div>
+    
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <h2>📋 生成的周报</h2>
+        <button class="copy-btn" id="copyBtn">📋 复制</button>
+      </div>
+      <div class="report-content" id="report"></div>
+    </div>
+  </div>
+
+  <script>
+    const notesInput = document.getElementById('notes');
+    const generateBtn = document.getElementById('generateBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const loading = document.getElementById('loading');
+    const errorDiv = document.getElementById('error');
+    const resultCard = document.getElementById('resultCard');
+    const reportDiv = document.getElementById('report');
+    const copyBtn = document.getElementById('copyBtn');
+
+    // 清空按钮
+    clearBtn.addEventListener('click', () => {
+      notesInput.value = '';
+      notesInput.focus();
+      resultCard.style.display = 'none';
+      errorDiv.style.display = 'none';
+    });
+
+    // 生成按钮
+    generateBtn.addEventListener('click', async () => {
+      const notes = notesInput.value.trim();
+      if (!notes) {
+        errorDiv.textContent = '请输入工作记录';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      // 显示加载
+      generateBtn.disabled = true;
+      loading.style.display = 'block';
+      errorDiv.style.display = 'none';
+      resultCard.style.display = 'none';
+
+      try {
+        const response = await fetch('http://localhost:3002/api/generate-report', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          reportDiv.textContent = data.report;
+          resultCard.style.display = 'block';
+        } else {
+          errorDiv.textContent = data.error || '生成失败';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = '网络错误，请检查服务器是否运行 (http://localhost:3002)';
+        errorDiv.style.display = 'block';
+      } finally {
+        generateBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    });
+
+    // 复制功能
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(reportDiv.textContent).then(() => {
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = '✅ 已复制';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 2000);
+      });
+    });
+
+    // 回车快捷键
+    notesInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        generateBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
