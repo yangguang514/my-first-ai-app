@@ -109,5 +109,5 @@ app.post('/api/generate-report', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`周报生成器运行在 http://localhost:${port}`);
+  console.log(`周报生成器运行在 https://my-first-ai-app-eight.vercel.app`);
 });
