@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "rag-bot/server/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "weeklyReport/wrserver/index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "rag-bot/server/index.js"
+    }
+  ]
+}
