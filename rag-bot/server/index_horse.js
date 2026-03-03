@@ -1,9 +1,7 @@
 import express from "express";
 import cors from "cors";
-import { OpenAIEmbeddings } from "@langchain/openai";
 import { OllamaEmbeddings } from "@langchain/ollama";
-import { PineconeStore } from "@langchain/pinecone";
-import { Pinecone } from "@pinecone-database/pinecone";
+import { Chroma } from "@langchain/community/vectorstores/chroma";
 import { ChatOpenAI } from "@langchain/openai";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 import { createStuffDocumentsChain } from "langchain/chains/combine_documents";
@@ -17,49 +15,48 @@ app.use(cors());
 app.use(express.json());
 
 const PROMPT_TEMPLATES = {
-  general_qa: `你是"会议纪要问答助手"。请仅基于提供的上下文回答问题。
+  general_qa: `你是“马类知识助手”。请仅基于提供的上下文回答问题。
 要求：
 1) 优先给出直接结论，再给简短依据。
-2) 如果上下文包含时间、地点、人名、决议，请尽量保留这些关键信息。
+2) 如果上下文包含时间、地点、物种名，请尽量保留这些关键信息。
 3) 如果上下文不足以回答，明确说“根据当前资料无法确定”，并说明缺少什么信息。
 4) 不要编造，不要使用上下文之外的知识。
 
 上下文：
 {context}`,
 
-  timeline_expert: `你是"会议时间线助手"。请仅依据上下文回答。
+  timeline_expert: `你是“马类演化时间线助手”。请仅依据上下文回答。
 回答格式：
-- 时间点：
-- 关键议题：
-- 决议/行动项：
-- 相关发言人：
+- 时间点/时期：
+- 关键事件：
+- 证据片段（简述）：
 
 要求：
-1) 优先梳理事件发生顺序。
-2) 若用户问"什么时候"、"先后关系"，必须给清晰的时间顺序。
+1) 优先梳理演化顺序（如始新世、物种变化、形态变化）。
+2) 若用户问“最早/最晚/先后关系”，必须给清晰顺序。
 3) 信息不足时写“根据当前资料无法确定”。
 4) 禁止编造。
 
 上下文：
 {context}`,
 
-  compare_expert: `你是"会议内容对比分析助手"。请仅依据上下文进行比较说明。
+  compare_expert: `你是“马属对比分析助手”。请仅依据上下文进行比较说明。
 回答格式：
-- 对比主题：
+- 对比对象：
 - 相同点：
 - 不同点：
-- 结论/建议：
+- 适用场景/结论：
 
 要求：
-1) 适合回答"两个会议中的"、"不同部门的观点"等对比问题。
-2) 对比维度优先：时间、参与者、关键议题、决议。
+1) 适合回答“冰岛马 vs 普氏野马”“古马 vs 现代马”等问题。
+2) 对比维度优先：体型、步态、栖息环境、食性、驯化与保护状态。
 3) 缺失维度要明确标注“资料未提及”。
 4) 禁止编造。
 
 上下文：
 {context}`,
 
-  strict_citation: `你是"证据优先的会议纪要问答助手"。只能用上下文内容回答。
+  strict_citation: `你是“证据优先的马类资料问答助手”。只能用上下文内容回答。
 要求：
 1) 每个核心结论后都附“依据：”并复述对应上下文信息。
 2) 若发现上下文内部信息可能冲突，先指出冲突再给保守结论。
@@ -75,54 +72,16 @@ function getPromptTemplateText() {
   return PROMPT_TEMPLATES[key] || PROMPT_TEMPLATES.general_qa;
 }
 
-// 构建嵌入模型
-function buildEmbeddings() {
-  const provider = (process.env.EMBEDDING_PROVIDER || "ollama").toLowerCase();
-
-  if (provider === "openai") {
-    return new OpenAIEmbeddings({
-      openAIApiKey: process.env.OPENAI_API_KEY,
-    });
-  }
-
-  if (provider === "ollama") {
-    return new OllamaEmbeddings({
-      model: process.env.OLLAMA_EMBEDDING_MODEL || "nomic-embed-text",
-      baseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
-    });
-  }
-
-  throw new Error(
-    `Unsupported EMBEDDING_PROVIDER: ${provider}. Allowed values: openai, ollama`
-  );
-}
-
-// 初始化向量库（连接到 Pinecone）
+// 初始化向量库（每次请求都重新连接，实际应复用）
 async function getVectorStore() {
-  const pineconeApiKey = process.env.PINECONE_API_KEY;
-  if (!pineconeApiKey) {
-    throw new Error(
-      "PINECONE_API_KEY is required. Please set it in your .env file or environment variables."
-    );
-  }
-
-  const embeddings = buildEmbeddings();
-  const pinecone = new Pinecone({
-    apiKey: pineconeApiKey,
+  const embeddings = new OllamaEmbeddings({
+    model: process.env.OLLAMA_EMBEDDING_MODEL || "nomic-embed-text",
+    baseUrl: process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434",
   });
-
-  const pineconeIndex = process.env.PINECONE_INDEX || "meeting-minutes";
-  const pineconeNamespace = process.env.PINECONE_NAMESPACE || "default";
-  const index = pinecone.Index(pineconeIndex);
-
-  const vectorStore = await PineconeStore.fromExistingIndex(embeddings, {
-    pineconeIndex: index,
-    namespace: pineconeNamespace,
+  const vectorStore = await Chroma.fromExistingCollection(embeddings, {
+    collectionName: process.env.CHROMA_COLLECTION || "horse",
+    url: process.env.CHROMA_URL || "http://localhost:8000",
   });
-
-  console.log(`Connected to Pinecone index "${pineconeIndex}" in namespace "${pineconeNamespace}".`);
-  console.log(`Using embedding provider: ${embeddings.constructor.name}`);
-
   return vectorStore;
 }
 
@@ -136,7 +95,7 @@ async function createChain() {
 
   if (searchType === "mmr") {
     console.warn(
-      "RETRIEVER_SEARCH_TYPE=mmr is not supported by Pinecone in this setup. Falling back to similarity.",
+      "RETRIEVER_SEARCH_TYPE=mmr is not supported by this Chroma setup. Falling back to similarity.",
     );
   }
 
@@ -182,31 +141,23 @@ app.post("/api/ask", async (req, res) => {
       return res.status(400).json({ error: "请提供问题" });
     }
 
-    console.log(`\n📝 用户问题: "${question}"`);
     const chain = await createChain();
     const result = await chain.invoke({ input: question });
 
-    // 调试：显示检索到的文档
-    console.log(`📚 检索到 ${result.context.length} 个相关文档：`);
-    result.context.forEach((doc, i) => {
-      const preview = doc.pageContent.substring(0, 80).replace(/\n/g, " ");
-      console.log(`   [${i + 1}] ${preview}...`);
-    });
-    
     // result 包含 answer 和 context（检索到的文档片段）
     res.json({
       answer: result.answer,
       sources: result.context.map(
         (doc) => doc.pageContent.substring(0, 100) + "...",
-      ),
+      ), // 只返回片段预览
     });
   } catch (error) {
-    console.error(`❌ 错误: ${error.message}`);
+    console.error(error);
     res.status(500).json({ error: error.message });
   }
 });
 
-const PORT = process.env.PORT || 3003;
+const PORT = 3003;
 app.listen(PORT, () => {
-  console.log(`会议纪要问答服务器运行在 http://localhost:${PORT}`);
+  console.log(`马类知识问答服务器运行在 http://localhost:${PORT}`);
 });

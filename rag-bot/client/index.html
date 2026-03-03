@@ -3,91 +3,377 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🏢 HR 政策助手</title>
+  <title>智能问答助手</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; }
-    .chat-container { border: 1px solid #ddd; border-radius: 20px; overflow: hidden; }
-    .messages { height: 400px; overflow-y: auto; padding: 20px; background: #f9f9f9; }
-    .user-message, .bot-message { margin-bottom: 15px; display: flex; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px; 
+      margin: 0 auto; 
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    
+    .header h1 { font-size: 28px; margin-bottom: 10px; }
+    .header p { font-size: 14px; opacity: 0.9; }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e0e0e0;
+      background: #fafafa;
+    }
+    
+    .tab {
+      flex: 1;
+      padding: 16px 20px;
+      text-align: center;
+      cursor: pointer;
+      font-weight: 500;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s ease;
+    }
+    
+    .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+      background: white;
+    }
+    
+    .tab:hover {
+      background: white;
+    }
+    
+    .tab-icon { margin-right: 8px; font-size: 18px; }
+    
+    .tab-content {
+      display: none;
+      padding: 20px;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    .mode-description {
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #333;
+    }
+    
+    .chat-container { 
+      border: 1px solid #ddd; 
+      border-radius: 12px; 
+      overflow: hidden; 
+      display: flex;
+      flex-direction: column;
+      height: 500px;
+    }
+    
+    .messages { 
+      flex: 1;
+      overflow-y: auto; 
+      padding: 20px; 
+      background: #fafafa;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .user-message, .bot-message { 
+      display: flex; 
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
     .user-message { justify-content: flex-end; }
-    .message-content { max-width: 70%; padding: 12px 16px; border-radius: 18px; line-height: 1.4; }
-    .user-message .message-content { background: #10a37f; color: white; border-bottom-right-radius: 4px; }
-    .bot-message .message-content { background: white; border: 1px solid #ddd; border-bottom-left-radius: 4px; }
-    .input-area { display: flex; padding: 15px; background: white; border-top: 1px solid #ddd; }
-    input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 30px; outline: none; }
-    button { margin-left: 10px; padding: 12px 25px; background: #10a37f; color: white; border: none; border-radius: 30px; cursor: pointer; }
-    .sources { font-size: 0.8rem; color: #888; margin-top: 5px; }
+    
+    .message-content { 
+      max-width: 75%; 
+      padding: 12px 16px; 
+      border-radius: 12px; 
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    
+    .user-message .message-content { 
+      background: #667eea; 
+      color: white; 
+      border-bottom-right-radius: 4px; 
+    }
+    
+    .bot-message .message-content { 
+      background: white; 
+      border: 1px solid #ddd; 
+      border-bottom-left-radius: 4px;
+      color: #333;
+    }
+    
+    .sources { 
+      font-size: 12px; 
+      color: #888; 
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .input-area { 
+      display: flex; 
+      gap: 10px;
+      padding: 15px; 
+      background: white; 
+      border-top: 1px solid #ddd; 
+    }
+    
+    input { 
+      flex: 1; 
+      padding: 12px 16px; 
+      border: 1px solid #ddd; 
+      border-radius: 24px; 
+      outline: none;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+    
+    input:focus {
+      border-color: #667eea;
+    }
+    
+    button { 
+      padding: 12px 30px; 
+      background: #667eea; 
+      color: white; 
+      border: none; 
+      border-radius: 24px; 
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    button:hover {
+      background: #5568d3;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 40px 20px;
+    }
+    
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
   </style>
 </head>
 <body>
-  <h1>🏢 动物知识库</h1>
-  <p>向我提问关于马的演化相关问题</p>
-  
-  <div class="chat-container">
-    <div class="messages" id="messages"></div>
-    <div class="input-area">
-      <input type="text" id="questionInput" placeholder="例如：马的演化历程是怎么样的？" />
-      <button id="sendBtn">发送</button>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 智能问答助手</h1>
+      <p>选择您感兴趣的知识库进行提问</p>
+    </div>
+    
+    <!-- 标签页 -->
+    <div class="tabs">
+      <div class="tab active" data-mode="horse">
+        <span class="tab-icon">🐴</span>
+        <span>马类知识</span>
+      </div>
+      <div class="tab" data-mode="meeting">
+        <span class="tab-icon">📋</span>
+        <span>会议纪要</span>
+      </div>
+    </div>
+    
+    <!-- 马类知识模式 -->
+    <div class="tab-content active" id="mode-horse">
+      <div class="mode-description">
+        💡 <strong>马类知识助手</strong> - 向我提问关于马的演化、生物学特征、物种分布等问题。
+      </div>
+      
+      <div class="chat-container">
+        <div class="messages" id="messages-horse">
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">
+            <div class="empty-state">
+              <div class="empty-state-icon">🐴</div>
+              <p>开始提问关于马的相关知识吧！</p>
+            </div>
+          </div>
+        </div>
+        <div class="input-area">
+          <input type="text" id="questionInput-horse" placeholder="例如：马的演化历程是怎样的？" />
+          <button id="sendBtn-horse">发送</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 会议纪要模式 -->
+    <div class="tab-content" id="mode-meeting">
+      <div class="mode-description">
+        💡 <strong>会议纪要助手</strong> - 向我提问关于会议内容、决议、时间、参与者等信息。
+      </div>
+      
+      <div class="chat-container">
+        <div class="messages" id="messages-meeting">
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999;">
+            <div class="empty-state">
+              <div class="empty-state-icon">📋</div>
+              <p>开始提问关于会议纪要的内容吧！</p>
+            </div>
+          </div>
+        </div>
+        <div class="input-area">
+          <input type="text" id="questionInput-meeting" placeholder="例如：会议中讨论了哪些议题？" />
+          <button id="sendBtn-meeting">发送</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    const messagesDiv = document.getElementById('messages');
-    const questionInput = document.getElementById('questionInput');
-    const sendBtn = document.getElementById('sendBtn');
-
-    function addMessage(role, content, sources) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = role === 'user' ? 'user-message' : 'bot-message';
-      
-      const contentDiv = document.createElement('div');
-      contentDiv.className = 'message-content';
-      contentDiv.innerText = content;
-      
-      if (sources && sources.length > 0) {
-        const sourcesDiv = document.createElement('div');
-        sourcesDiv.className = 'sources';
-        sourcesDiv.innerText = '📄 来源：' + sources.join(' | ');
-        contentDiv.appendChild(sourcesDiv);
+    // 配置不同的服务器端口
+    const configs = {
+      horse: {
+        port: 3001,
+        apiEndpoint: 'http://localhost:3001/api/ask'
+      },
+      meeting: {
+        port: 3003,
+        apiEndpoint: 'http://localhost:3003/api/ask'
       }
-      
-      messageDiv.appendChild(contentDiv);
-      messagesDiv.appendChild(messageDiv);
-      messagesDiv.scrollTop = messagesDiv.scrollHeight;
-    }
-
-    async function sendQuestion() {
-      const question = questionInput.value.trim();
-      if (!question) return;
-
-      addMessage('user', question);
-      questionInput.value = '';
-      sendBtn.disabled = true;
-
-      try {
-        const response = await fetch('https://my-first-ai-app-rkco.vercel.app/api/ask', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question })
-        });
-        const data = await response.json();
-        
-        if (response.ok) {
-          addMessage('bot', data.answer, data.sources);
-        } else {
-          addMessage('bot', '❌ 错误：' + data.error);
-        }
-      } catch (err) {
-        addMessage('bot', '❌ 网络错误，请检查服务器');
-      } finally {
-        sendBtn.disabled = false;
-      }
-    }
-
-    sendBtn.addEventListener('click', sendQuestion);
-    questionInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendQuestion();
+    };
+    
+    let currentMode = 'horse';
+    
+    // 标签页切换
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const mode = tab.dataset.mode;
+        switchMode(mode);
+      });
     });
+    
+    function switchMode(mode) {
+      currentMode = mode;
+      
+      // 更新标签页状态
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+      });
+      
+      // 更新内容显示
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `mode-${mode}`);
+      });
+    }
+    
+    // 初始化信息处理
+    function setupMode(mode) {
+      const messagesDiv = document.getElementById(`messages-${mode}`);
+      const questionInput = document.getElementById(`questionInput-${mode}`);
+      const sendBtn = document.getElementById(`sendBtn-${mode}`);
+      
+      function addMessage(role, content, sources) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = role === 'user' ? 'user-message' : 'bot-message';
+        
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.innerText = content;
+        
+        if (sources && sources.length > 0) {
+          const sourcesDiv = document.createElement('div');
+          sourcesDiv.className = 'sources';
+          sourcesDiv.innerText = '📄 相关文段：' + sources.slice(0, 2).join(' | ');
+          contentDiv.appendChild(sourcesDiv);
+        }
+        
+        messageDiv.appendChild(contentDiv);
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+      
+      async function sendQuestion() {
+        const question = questionInput.value.trim();
+        if (!question) return;
+        
+        // 清空空状态
+        if (messagesDiv.querySelector('.empty-state')) {
+          messagesDiv.innerHTML = '';
+        }
+        
+        addMessage('user', question);
+        questionInput.value = '';
+        sendBtn.disabled = true;
+        
+        try {
+          const response = await fetch(configs[mode].apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question })
+          });
+          const data = await response.json();
+          
+          if (response.ok) {
+            addMessage('bot', data.answer, data.sources);
+          } else {
+            addMessage('bot', '❌ 错误：' + (data.error || '未知错误'));
+          }
+        } catch (err) {
+          addMessage('bot', `❌ 网络错误，请确保服务器运行在 localhost:${configs[mode].port}`);
+        } finally {
+          sendBtn.disabled = false;
+          questionInput.focus();
+        }
+      }
+      
+      sendBtn.addEventListener('click', sendQuestion);
+      questionInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendQuestion();
+        }
+      });
+    }
+    
+    // 初始化两个模式
+    setupMode('horse');
+    setupMode('meeting');
   </script>
 </body>
 </html>
